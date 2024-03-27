@@ -1,5 +1,5 @@
 ---
-title: "JSC370 Final Project"
+title: "JSC370 Lab12"
 author: "Kyle Vavasour"
 output: 
     html_document:
@@ -7,7 +7,7 @@ output:
         toc_float: TRUE
 ---
 
-This is my JSC370 Final Project website.
+This is my JSC370 Lab12 website.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
