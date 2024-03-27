@@ -1,6 +1,6 @@
 ---
 title: "JSC370 Final Project"
-author: "Your Name"
+author: "Kyle Vavasour"
 output: 
     html_document:
         toc: TRUE
@@ -8,3 +8,86 @@ output:
 ---
 
 This is my JSC370 Final Project website.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(plotly)
+library(widgetframe)
+library(tidytext)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+sb_locs <- read_csv('starbucks/starbucks-locations.csv')
+sb_nutr <- read_csv('starbucks/starbucks-menu-nutrition.csv')
+usa_pop <- read_csv('starbucks/us_state_pop.csv')
+usa_states <- read_csv('starbucks/states.csv') 
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+sb_usa <- sb_locs |> filter(Country == "US")
+sb_locs_state <- sb_usa |>
+  group_by(`State/Province`) |>
+  rename('State' = `State/Province`) |>
+  summarize(count = n())
+# need state abbreviations
+usa_pop_abbr <- 
+  full_join(
+    usa_states,
+    usa_pop,
+    by = join_by(State == state)
+  ) 
+sb_locs_state <- full_join(
+  sb_locs_state,
+  usa_pop_abbr,
+  by = join_by(State == Abbreviation)
+)
+```
+
+### Figure 1
+
+```{r plot1, echo=FALSE, message=FALSE, warning=FALSE}
+sb_to_pop <- sb_locs_state |>
+  ggplot(aes(x=population, y=count)) +
+  geom_point() +
+  labs(x="State Population", y="Number of Starbucks", title="Number of Starbucks to State Population")
+ggplotly(sb_to_pop)
+```
+
+### Figure 2
+
+```{r plot2, echo=FALSE, message=FALSE, warning=FALSE}
+# Set up mapping details
+set_map_details <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('steelblue')
+)
+
+# Make sure both maps are on the same color scale
+shadeLimit <- 125
+
+# Create hover text
+sb_locs_state$hover <- with(sb_locs_state, paste("Number of Starbucks: ", count, '<br>', "State: ", State.y, '<br>', "Population: ", population))
+
+# Create the map
+map1 <- plot_geo(sb_locs_state,locationmode='USA-states') |>
+  add_trace(
+    z=~count, text=~hover, locations=~State,
+    color=~count, colors='Blues'
+  ) |>
+  colorbar(title="Starbucks Count") |>
+  layout(geo = set_map_details)
+
+
+map2 <- plot_geo(sb_locs_state,locationmode='USA-states') |>
+  add_trace(
+    z=~population, text=~hover, locations=~State,
+    color=~population, colors='Blues'
+  ) |>
+  colorbar(title="Population Count") |>
+  layout(geo = set_map_details)
+
+subplot(map1, map2, titleY=TRUE, titleX=TRUE) |> 
+  layout(title="Starbucks (Left) and Population (Right) Count By State")
+```
